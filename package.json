@@ -2,6 +2,7 @@
   "name": "postergamev2",
   "private": true,
   "version": "1.0.0",
+  "engines": { "node": ">=18" },
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,8 +11,5 @@
   },
   "devDependencies": {
     "vite": "^7.3.1"
-  },
-  "dependencies": {
-    "form-data": "^4.0.5"
   }
 }
