@@ -7,9 +7,11 @@
  *
  * Config: bodyParser sizeLimit 10mb so Vercel parses the full JSON body (base64 image ~2–4mb).
  * data part: Buffer + contentType, NO filename. resource part: image Buffer + filename.
+ * Use node-fetch (not native fetch) so form-data stream is consumed correctly by Miro.
  */
 
 import FormData from 'form-data';
+import fetch from 'node-fetch';
 
 const MIRO_BOARD_ID = process.env.MIRO_BOARD_ID || '';
 const MIRO_ACCESS_TOKEN = process.env.MIRO_ACCESS_TOKEN || '';
@@ -106,6 +108,7 @@ export default async function handler(req, res) {
 
     const miroUrl = `https://api.miro.com/v2/boards/${encodeURIComponent(board)}/images`;
 
+    // node-fetch consumes form-data stream correctly; native fetch does not
     const miroRes = await fetch(miroUrl, {
       method: 'POST',
       headers: {
