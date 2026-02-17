@@ -5,9 +5,8 @@
  * POST body (JSON): { boardId, accessToken, imageDataUrl }
  * Or set env vars MIRO_BOARD_ID and MIRO_ACCESS_TOKEN and send only: { imageDataUrl }
  *
- * The `data` part must have NO filename. Node's native FormData gives Blobs filename=blob,
- * which Miro rejects. Using form-data package with a Buffer (not Blob) for `data` and
- * contentType + knownLength but NO filename produces the correct part (matches curl).
+ * Config: bodyParser sizeLimit 10mb so Vercel parses the full JSON body (base64 image ~2–4mb).
+ * data part: Buffer + contentType, NO filename. resource part: image Buffer + filename.
  */
 
 import FormData from 'form-data';
@@ -15,8 +14,23 @@ import FormData from 'form-data';
 const MIRO_BOARD_ID = process.env.MIRO_BOARD_ID || '';
 const MIRO_ACCESS_TOKEN = process.env.MIRO_ACCESS_TOKEN || '';
 
-async function getBody(req) {
-  if (req.body && typeof req.body === 'object') return req.body;
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
+
+async function getBodyIfNeeded(req) {
+  if (req.body != null && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try {
+      return JSON.parse(req.body);
+    } catch (_) {
+      return {};
+    }
+  }
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
   const raw = Buffer.concat(chunks).toString('utf8');
@@ -28,49 +42,49 @@ async function getBody(req) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') return res.status(405).end();
+
+  if (typeof req.body === 'string') {
+    try {
+      req.body = JSON.parse(req.body);
+    } catch (_) {
+      return res.status(400).json({ error: 'Could not parse request body' });
+    }
+  }
+
+  const body = req.body != null ? req.body : await getBodyIfNeeded(req);
+  const { boardId, accessToken, imageDataUrl } = body ?? {};
+  const token = (accessToken || MIRO_ACCESS_TOKEN || '').trim();
+  const board = (boardId || MIRO_BOARD_ID || '').trim();
+
+  if (!token || !board || !imageDataUrl) {
+    return res.status(400).json({
+      error: 'Missing required fields',
+      has: { token: !!token, board: !!board, imageDataUrl: !!imageDataUrl },
+    });
   }
 
   try {
-    const body = await getBody(req);
-    const token = (body.accessToken || MIRO_ACCESS_TOKEN || '').trim();
-    const board = (body.boardId || MIRO_BOARD_ID || '').trim();
-    const imageDataUrl = body.imageDataUrl;
-
-    if (!token || !board || !imageDataUrl || typeof imageDataUrl !== 'string') {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
     const [header, base64] = imageDataUrl.split(',');
-    if (!base64) return res.status(400).json({ error: 'Invalid imageDataUrl format' });
-
     const mimeMatch = header && header.match(/:(.*?);/);
     const mime = (mimeMatch && mimeMatch[1]) || 'image/png';
     const ext = mime === 'image/jpeg' ? 'jpg' : 'png';
-    let imageBuffer;
-    try {
-      imageBuffer = Buffer.from(base64, 'base64');
-    } catch (_) {
-      return res.status(400).json({ error: 'Invalid base64 in imageDataUrl' });
-    }
+    const imageBuffer = Buffer.from(base64, 'base64');
 
+    if (imageBuffer.byteLength === 0) {
+      return res.status(400).json({ error: 'Image buffer is empty after decode' });
+    }
     if (imageBuffer.byteLength > 6 * 1024 * 1024) {
-      return res.status(400).json({ error: 'Image exceeds 6 MB limit' });
+      return res.status(400).json({ error: 'Image exceeds Miro 6 MB limit' });
     }
 
-    const dataJson = JSON.stringify({ position: { x: 0, y: 0 } });
-    const dataBuffer = Buffer.from(dataJson);
+    const dataBuffer = Buffer.from(JSON.stringify({ position: { x: 0, y: 0 } }));
 
     const form = new FormData();
-
-    // data part: Buffer + contentType, NO filename → no filename= in Content-Disposition
     form.append('data', dataBuffer, {
       contentType: 'application/json',
       knownLength: dataBuffer.byteLength,
     });
-
     form.append('resource', imageBuffer, {
       filename: `poster.${ext}`,
       contentType: mime,
@@ -100,9 +114,9 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(200).json(responseText ? JSON.parse(responseText) : {});
+    return res.status(200).json(JSON.parse(responseText));
   } catch (err) {
-    console.error('Proxy error:', err);
+    console.error('Proxy error:', err.message, err.stack);
     return res.status(500).json({ error: err.message });
   }
 }
