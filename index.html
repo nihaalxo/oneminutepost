@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Minute Poster</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=Playfair+Display:ital,wght@0,700;1,400&family=Space+Grotesk:wght@300;400;600&family=Syne:wght@400;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Black+Han+Sans&family=Epilogue:wght@200;400;700&family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --panel: #181818;
+    --border: #2a2a2a;
+    --text: #e8e8e8;
+    --muted: #666;
+    --accent: #e8e8e8;
+    --danger: #ff4444;
+    --warn: #ffaa00;
+    --grid: #1a1a1a;
+    --timer-color: #e8e8e8;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── TOP BAR ─────────────────────────────────────────── */
+  #topbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 52px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0;
+    z-index: 1000;
+  }
+
+  #topbar-left {
+    width: 260px;
+    padding: 0 16px;
+    border-right: 1px solid var(--border);
+    height: 100%;
+    display: flex; align-items: center;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  #topbar-center {
+    flex: 1;
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 20px;
+  }
+
+  #topbar-right {
+    width: 260px;
+    padding: 0 16px;
+    border-left: 1px solid var(--border);
+    height: 100%;
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  }
+
+  /* Timer */
+  #timer-display {
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--timer-color);
+    transition: color 0.5s ease;
+    min-width: 80px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #timer-display.warn { color: var(--warn) !important; }
+  #timer-display.danger { color: var(--danger) !important; }
+  #timer-display.pulse {
+    animation: timerPulse 0.6s ease-in-out infinite;
+  }
+  @keyframes timerPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.05); }
+  }
+
+  #timer-bar-wrap {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  #timer-bar {
+    height: 100%;
+    background: var(--text);
+    width: 100%;
+    transition: width 1s linear, background 0.5s ease;
+    transform-origin: left;
+  }
+
+  /* Controls */
+  .ctrl-group {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ctrl-label {
+    font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  select.ctrl-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 4px 8px;
+    height: 28px;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    padding-right: 22px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 7px center;
+    min-width: 120px;
+  }
+  select.ctrl-select:focus { border-color: var(--muted); }
+
+  .ctrl-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    height: 28px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .ctrl-btn:hover { border-color: var(--muted); background: #222; }
+  .ctrl-btn:active { background: #2a2a2a; }
+  .ctrl-btn.active { background: #fff; color: #000; border-color: #fff; }
+
+  /* ── LAYOUT ──────────────────────────────────────────── */
+  #layout {
+    position: fixed;
+    top: 52px; left: 0; right: 0; bottom: 0;
+    display: flex;
+  }
+
+  /* ── LEFT SIDEBAR ────────────────────────────────────── */
+  #sidebar {
+    width: 260px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    flex-shrink: 0;
+    display: flex; flex-direction: column;
+  }
+
+  .sidebar-section {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 14px 16px;
+  }
+
+  .sidebar-section-title {
+    font-size: 9px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* Text blocks */
+  .text-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    cursor: grab;
+    transition: border-color 0.15s;
+    position: relative;
+  }
+  .text-item:hover { border-color: #444; }
+  .text-item:active { cursor: grabbing; }
+  .text-item .label {
+    font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .text-item .preview-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; line-height: 1; color: var(--text);
+  }
+  .text-item .preview-body {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px; color: #aaa; line-height: 1.4;
+  }
+
+  /* Color swatches */
+  .color-grid {
+    display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px;
+    margin-bottom: 10px;
+  }
+  .swatch {
+    width: 100%; aspect-ratio: 1;
+    border-radius: 2px; cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.1s, transform 0.1s;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.selected { border-color: #fff; }
+
+  /* Image tiles */
+  .img-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .img-tile {
+    aspect-ratio: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    cursor: grab;
+    overflow: hidden;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+  .img-tile:hover { border-color: #444; }
+  .img-tile:active { cursor: grabbing; }
+  .img-tile canvas, .img-tile svg {
+    width: 100%; height: 100%; display: block;
+    pointer-events: none;
+  }
+  .img-tile img.asset-preview {
+    width: 100%; height: 100%; display: block;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  /* Shape icons */
+  .shape-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
+  .shape-tile {
+    aspect-ratio: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    cursor: grab;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s;
+  }
+  .shape-tile:hover { border-color: #444; }
+  .shape-tile svg { width: 60%; height: 60%; pointer-events: none; }
+
+  /* Size input */
+  .size-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 8px;
+  }
+  .size-label { font-size: 10px; color: var(--muted); letter-spacing: 0.05em; }
+  input[type=number].size-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 4px 8px;
+    width: 60px;
+    outline: none;
+  }
+  input[type=range].range-input {
+    -webkit-appearance: none;
+    height: 3px; background: var(--border);
+    outline: none; flex: 1;
+  }
+  input[type=range].range-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%; background: var(--text);
+    cursor: pointer;
+  }
+
+  /* Align buttons */
+  .align-row {
+    display: flex; gap: 4px; margin-top: 8px;
+  }
+  .align-btn {
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); cursor: pointer;
+    padding: 4px 8px; font-size: 12px;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  .align-btn:hover { border-color: #444; }
+  .align-btn.active { background: #333; border-color: #666; }
+
+  /* Layer buttons */
+  .layer-row {
+    display: flex; gap: 6px; margin-top: 8px;
+  }
+  .layer-btn {
+    flex: 1;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 4px;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  .layer-btn:hover { border-color: #444; background: #222; }
+
+  /* Delete btn */
+  .delete-btn {
+    width: 100%;
+    background: transparent; border: 1px solid #3a2020;
+    color: #ff6666; cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px;
+    margin-top: 6px;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  .delete-btn:hover { border-color: var(--danger); background: #1a0a0a; }
+
+  /* ── MAIN CANVAS AREA ────────────────────────────────── */
+  #canvas-area {
+    flex: 1;
+    background: var(--grid);
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    overflow: visible;
+  }
+
+  /* Square canvas: content clipped; handles drawn in overlay so they stay visible */
+  #poster-canvas {
+    width: 600px;
+    height: 600px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05);
+    flex-shrink: 0;
+  }
+
+  #poster-handles-overlay {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    overflow: visible;
+    z-index: 100;
+  }
+  #poster-handles-overlay .resize-handle,
+  #poster-handles-overlay .rotate-handle {
+    pointer-events: auto;
+    bottom: auto;
+    right: auto;
+    left: auto;
+    top: auto;
+  }
+
+  #poster-canvas.frozen { pointer-events: none; }
+
+  /* Elements on canvas */
+  .canvas-element {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    touch-action: none;
+  }
+  .canvas-element.selected::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border: 2px solid rgba(100, 160, 255, 0.8);
+    pointer-events: none;
+  }
+
+  .canvas-text { cursor: move; }
+  .canvas-text .text-content {
+    width: 100%;
+    min-height: 1em;
+    outline: none;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* Resize handles */
+  .resize-handle {
+    position: absolute;
+    width: 10px; height: 10px;
+    background: #fff;
+    border: 2px solid rgba(100, 160, 255, 0.9);
+    border-radius: 2px;
+    cursor: nwse-resize;
+    z-index: 10;
+  }
+  .resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+  .resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+  .resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
+  .resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+
+  /* Rotate handle */
+  .rotate-handle {
+    position: absolute;
+    top: -24px; left: 50%; transform: translateX(-50%);
+    width: 16px; height: 16px;
+    background: #fff;
+    border: 2px solid rgba(100, 160, 255, 0.9);
+    border-radius: 50%;
+    cursor: grab;
+    z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rotate-handle::after {
+    content: '↻'; font-size: 10px; color: #333; line-height: 1;
+  }
+
+  .canvas-image { cursor: move; }
+  .canvas-image img {
+    width: 100%; height: 100%;
+    display: block;
+    pointer-events: none;
+    object-fit: cover;
+  }
+  .canvas-shape { cursor: move; }
+  .canvas-shape svg {
+    width: 100%; height: 100%;
+    display: block; pointer-events: none;
+  }
+  .canvas-asset { cursor: move; }
+  .canvas-asset img { width: 100%; height: 100%; display: block; object-fit: contain; pointer-events: none; }
+  .canvas-asset .asset-svg-wrap { width: 100%; height: 100%; color: inherit; }
+  .canvas-asset .asset-svg-wrap svg { width: 100%; height: 100%; display: block; pointer-events: none; }
+
+  /* ── END STATE OVERLAY ───────────────────────────────── */
+  #end-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.82);
+    display: none;
+    align-items: center; justify-content: center;
+    flex-direction: column;
+    gap: 0;
+    z-index: 2000;
+  }
+  #end-overlay.visible { display: flex; }
+
+  #end-message {
+    text-align: center;
+    animation: endReveal 0.6s ease forwards;
+  }
+  @keyframes endReveal {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  #end-line-1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 8vw, 96px);
+    letter-spacing: 0.05em;
+    color: #fff;
+    line-height: 1;
+  }
+  #end-line-2 {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(14px, 2vw, 18px);
+    color: #888;
+    margin-top: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .end-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 28px;
+  }
+  .end-action-btn {
+    background: transparent;
+    border: 1px solid #444;
+    color: #888;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .end-action-btn:hover { border-color: #aaa; color: #ddd; }
+
+  /* ── START SCREEN ────────────────────────────────────── */
+  #start-screen {
+    position: fixed; inset: 0;
+    background: #0f0f0f;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 3000;
+    flex-direction: column; gap: 0;
+  }
+
+  #start-screen.hidden { display: none; }
+
+  .start-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 12vw, 160px);
+    letter-spacing: 0.04em;
+    color: #fff;
+    line-height: 0.9;
+    text-align: center;
+  }
+  .start-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: #555;
+    letter-spacing: 0.12em;
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  #start-btn {
+    margin-top: 52px;
+    background: #fff;
+    border: none;
+    color: #000;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 16px 48px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  #start-btn:hover { background: #ddd; transform: scale(1.02); }
+
+  .start-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #3a3a3a;
+    letter-spacing: 0.08em;
+    margin-top: 16px;
+    text-align: center;
+  }
+
+  /* Onboarding */
+  #onboarding-screen {
+    position: fixed; inset: 0;
+    background: #0f0f0f;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2900;
+    padding: 24px;
+  }
+  #onboarding-screen.hidden { display: none; }
+  .onboarding-inner {
+    max-width: 480px;
+    width: 100%;
+  }
+  .onboarding-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.05em;
+    color: #fff;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .onboarding-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #666;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .onboarding-input {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 10px 12px;
+    margin-bottom: 24px;
+    outline: none;
+  }
+  .onboarding-input:focus { border-color: #555; }
+  .onboarding-input::placeholder { color: #555; }
+  .onboarding-desc {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: #999;
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+  .onboarding-desc p { margin-bottom: 12px; }
+  .onboarding-desc p:last-child { margin-bottom: 0; }
+  .onboarding-desc strong { color: #ccc; }
+  .onboarding-btn {
+    width: 100%;
+    background: #fff;
+    border: none;
+    color: #000;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .onboarding-btn:hover { background: #ddd; }
+
+  /* Scrollbar */
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-track { background: var(--panel); }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ── START SCREEN ── -->
+<div id="start-screen">
+  <div class="start-title">ONE<br>MINUTE<br>POSTER</div>
+  <div class="start-sub">You have 60 seconds to design a poster.</div>
+  <button id="start-btn">Begin</button>
+  <div class="start-note">Start onboarding.</div>
+</div>
+
+<!-- ── ONBOARDING (name + UI description) ── -->
+<div id="onboarding-screen" class="hidden">
+  <div class="onboarding-inner">
+    <div class="onboarding-title">Quick guide</div>
+    <label class="onboarding-label">Your name</label>
+    <input type="text" id="player-name" class="onboarding-input" placeholder="Enter your name" maxlength="60">
+    <div class="onboarding-desc">
+      <p><strong>Left sidebar</strong> — Drag text blocks, pick a color, then drag images and icons from the asset sections onto the canvas.</p>
+      <p><strong>White canvas</strong> — Your social post. Drop elements here, then click to select and use the blue handles to resize or rotate.</p>
+      <p><strong>Top bar</strong> — Timer (1:00), font choice, and alignment. When you select text on the canvas, you can change font and alignment here.</p>
+      <p>You have <strong>1 minute</strong>. When time runs out, the canvas freezes.</p>
+    </div>
+    <button id="start-timer-btn" class="onboarding-btn">Start timer</button>
+  </div>
+</div>
+
+<!-- ── TOP BAR ── -->
+<div id="topbar">
+  <div id="topbar-left">One Minute Poster</div>
+  <div id="topbar-center">
+    <div id="timer-display">1:00</div>
+    <div id="timer-bar-wrap">
+      <div id="timer-bar"></div>
+    </div>
+  </div>
+  <div id="topbar-right">
+    <span class="ctrl-label">Font</span>
+    <select class="ctrl-select" id="font-select">
+      <option value="Bebas Neue">Bebas Neue</option>
+      <option value="Unbounded">Unbounded</option>
+      <option value="Playfair Display">Playfair Display</option>
+      <option value="Cormorant Garamond">Cormorant Garamond</option>
+      <option value="Syne">Syne</option>
+      <option value="Space Grotesk">Space Grotesk</option>
+      <option value="Epilogue">Epilogue</option>
+      <option value="Black Han Sans">Black Han Sans</option>
+      <option value="DM Mono">DM Mono</option>
+    </select>
+    <div class="ctrl-group">
+      <button class="ctrl-btn" id="btn-align-left" title="Align Left">⬅</button>
+      <button class="ctrl-btn" id="btn-align-center" title="Center">⬆</button>
+      <button class="ctrl-btn" id="btn-align-right" title="Align Right">➡</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN LAYOUT ── -->
+<div id="layout">
+
+  <!-- LEFT SIDEBAR -->
+  <div id="sidebar">
+
+    <!-- TEXT SECTION -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Text</div>
+      <div class="text-item" id="drag-headline" draggable="false" data-type="text" data-variant="headline">
+        <div class="label">Headline</div>
+        <div class="preview-headline">HEADLINE</div>
+      </div>
+      <div class="text-item" id="drag-body" draggable="false" data-type="text" data-variant="body">
+        <div class="label">Body Text</div>
+        <div class="preview-body">Your text here. Add details, descriptions, or call to action.</div>
+      </div>
+      <div class="text-item" id="drag-label" draggable="false" data-type="text" data-variant="label">
+        <div class="label">Label / Caption</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;color:#aaa;text-transform:uppercase;">LABEL TEXT</div>
+      </div>
+    </div>
+
+    <!-- COLOR SECTION: Primary + Secondary -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Primary</div>
+      <div class="color-grid" id="color-grid-primary"></div>
+      <div class="sidebar-section-title" style="margin-top:12px;">Secondary</div>
+      <div class="color-grid" id="color-grid-secondary"></div>
+    </div>
+
+    <!-- ELEMENT PROPERTIES (shown when selected) -->
+    <div class="sidebar-section" id="props-section" style="display:none;">
+      <div class="sidebar-section-title">Element</div>
+      <div class="size-row">
+        <span class="size-label">W</span>
+        <input type="number" class="size-input" id="prop-w" min="10" max="600">
+        <span class="size-label">H</span>
+        <input type="number" class="size-input" id="prop-h" min="10" max="600">
+      </div>
+      <div class="size-row">
+        <span class="size-label">Size</span>
+        <input type="range" class="range-input" id="prop-fontsize" min="8" max="200" value="24">
+        <span id="prop-fontsize-val" style="font-size:10px;color:var(--muted);min-width:30px">24</span>
+      </div>
+      <div class="align-row">
+        <button class="align-btn" id="el-align-left" title="Left">≡</button>
+        <button class="align-btn" id="el-align-center" title="Center">≡</button>
+        <button class="align-btn" id="el-align-right" title="Right">≡</button>
+      </div>
+      <div class="layer-row">
+        <button class="layer-btn" id="layer-forward">▲ Forward</button>
+        <button class="layer-btn" id="layer-backward">▼ Backward</button>
+      </div>
+      <button class="delete-btn" id="delete-el">✕ Delete</button>
+    </div>
+
+    <!-- CUSTOM ASSETS (from project folders) -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Building blocks</div>
+      <div class="img-grid assets-grid" id="assets-buildingblocks"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Pattern BG</div>
+      <div class="img-grid assets-grid" id="assets-patternbg"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Pattern blocks</div>
+      <div class="img-grid assets-grid" id="assets-patternblocks"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Logos</div>
+      <div class="img-grid assets-grid" id="assets-logos"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Gradient backgrounds</div>
+      <div class="img-grid assets-grid" id="assets-gradientbg"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Cyan blue icons</div>
+      <div class="img-grid assets-grid" id="assets-cyanicons"></div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <!-- CANVAS AREA -->
+  <div id="canvas-area">
+    <div id="poster-canvas"></div>
+    <div id="poster-handles-overlay"></div>
+  </div>
+
+</div><!-- /layout -->
+
+<!-- END OVERLAY -->
+<div id="end-overlay">
+  <div id="end-message">
+    <div id="end-line-1">This took one minute.</div>
+    <div id="end-line-2">It's never a one minute job.</div>
+  </div>
+  <div class="end-actions">
+    <button id="submit-download" class="end-action-btn">Download</button>
+    <button id="submit-miro" class="end-action-btn">Upload</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// MIRO - all uploads go to one board. See MIRO_SETUP.md for steps.
+//
+// (See MIRO_SETUP.md for token and board ID. Paste miroBoardId and miroAccessToken below.)
+//   All posts go to ONE board. Create a board, share the link; everyone’s images appear there.
+//
+// Option B — One shared Google Drive folder
+//   Create a folder, right‑click → Share → “Anyone with the link” = Editor.
+//   Copy folder ID from the URL: …/folders/FOLDER_ID
+//   Create OAuth Client ID (Web) in Google Cloud, enable Drive API.
+//   Everyone signs in with Google; uploads go into this one folder.
+// ══════════════════════════════════════════════════════════════
+const UPLOAD_CONFIG = {
+  miroBoardId: 'uXjVG_fgobo=',
+  miroAccessToken: 'eyJtaXJvLm9yaWdpbiI6ImV1MDEifQ_6JTAshsKtYl4aBeuBT8tGbj2RXs',
+};
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+
+let timerInterval = null;
+let secondsLeft = 60;
+let gameActive = false;
+let gameDone = false;
+let elements = []; // {id, el, type, x, y, w, h, rotation, zIndex}
+let selectedId = null;
+let elCounter = 0;
+let currentColor = '#000000';
+let currentFont = 'Bebas Neue';
+let dragFromSidebar = null; // sidebar drag state
+let playerName = '';
+
+// ══════════════════════════════════════════════════════════════
+// PALETTE
+// ══════════════════════════════════════════════════════════════
+// Primary: 0511f2, black, white, 040050, f22797 — Secondary: d7f501, baeba1, 71dbd4, 8094dd, a92387, f27927, ed5726
+const PRIMARY_COLORS = ['#0511f2','#000000','#ffffff','#040050','#f22797'];
+const SECONDARY_COLORS = ['#d7f501','#baeba1','#71dbd4','#8094dd','#a92387','#f27927','#ed5726'];
+const COLORS = [...PRIMARY_COLORS, ...SECONDARY_COLORS];
+
+// ══════════════════════════════════════════════════════════════
+// CUSTOM ASSETS (from project folders – SVGs + PNGs, with previews)
+// Add paths for PNG/JPG the same way (e.g. 'Logos/logo.png').
+// ══════════════════════════════════════════════════════════════
+const ASSET_FOLDERS = {
+  buildingblocks: [
+    'Buildingblocks/buildingblocks-306.svg', 'Buildingblocks/buildingblocks-307.svg',
+    'Buildingblocks/buildingblocks-308.svg', 'Buildingblocks/buildingblocks-309.svg',
+  ],
+  patternbg: [
+    'Pattern BG/patternBGs-303.svg', 'Pattern BG/patternBGs-304.svg', 'Pattern BG/patternBGs-305.svg',
+  ],
+  patternblocks: [
+    'Patternblocks/patternblocks-310.svg', 'Patternblocks/patternblocks-311.svg',
+    'Patternblocks/patternblocks-312.svg', 'Patternblocks/patternblocks-313.svg',
+  ],
+  logos: [
+    'Logos/logoblue.png', 'Logos/logowhite.png',
+  ],
+  gradientbg: [
+    'Gradient Backgrounds/gradientbackgrounds-04.png', 'Gradient Backgrounds/gradientbackgrounds-05.png',
+    'Gradient Backgrounds/gradientbackgrounds-06.png', 'Gradient Backgrounds/gradientbackgrounds-07.png',
+    'Gradient Backgrounds/gradientbackgrounds-08.png', 'Gradient Backgrounds/gradientbackgrounds-09.png',
+    'Gradient Backgrounds/gradientbackgrounds-10.png', 'Gradient Backgrounds/gradientbackgrounds-11.png',
+    'Gradient Backgrounds/gradientbackgrounds-12.png',
+  ],
+  cyanicons: [
+    'Cyan blue icons/cyanbluemotifs-182.png', 'Cyan blue icons/cyanbluemotifs-183.png',
+    'Cyan blue icons/cyanbluemotifs-184.png', 'Cyan blue icons/cyanbluemotifs-185.png',
+    'Cyan blue icons/cyanbluemotifs-186.png', 'Cyan blue icons/cyanbluemotifs-187.png',
+    'Cyan blue icons/cyanbluemotifs-188.png', 'Cyan blue icons/cyanbluemotifs-189.png',
+    'Cyan blue icons/cyanbluemotifs-190.png', 'Cyan blue icons/cyanbluemotifs-191.png',
+    'Cyan blue icons/cyanbluemotifs-192.png', 'Cyan blue icons/cyanbluemotifs-193.png',
+    'Cyan blue icons/cyanbluemotifs-194.png', 'Cyan blue icons/cyanbluemotifs-195.png',
+    'Cyan blue icons/cyanbluemotifs-196.png', 'Cyan blue icons/cyanbluemotifs-197.png',
+    'Cyan blue icons/cyanbluemotifs-198.png', 'Cyan blue icons/cyanbluemotifs-199.png',
+    'Cyan blue icons/cyanbluemotifs-200.png', 'Cyan blue icons/cyanbluemotifs-201.png',
+    'Cyan blue icons/cyanbluemotifs-202.png', 'Cyan blue icons/cyanbluemotifs-203.png',
+    'Cyan blue icons/cyanbluemotifs-204.png', 'Cyan blue icons/cyanbluemotifs-205.png',
+  ],
+};
+const SVG_CACHE = {};
+
+function svgMarkupToCurrentColor(markup) {
+  if (!markup) return '';
+  return markup
+    .replace(/\bfill:\s*#[0-9a-fA-F]+\b/g, 'fill:currentColor')
+    .replace(/\bstroke:\s*#[0-9a-fA-F]+\b/g, 'stroke:currentColor')
+    .replace(/\bfill="#[0-9a-fA-F]+"/g, 'fill="currentColor"')
+    .replace(/\bstroke="#[0-9a-fA-F]+"/g, 'stroke="currentColor"')
+    .replace(/<style>[\s\S]*?<\/style>/gi, (styleBlock) =>
+      styleBlock.replace(/\bfill:\s*#[0-9a-fA-F]+\b/g, 'fill:currentColor').replace(/\bstroke:\s*#[0-9a-fA-F]+\b/g, 'stroke:currentColor')
+    );
+}
+
+function assetUrl(path) {
+  return '/' + path.split('/').map(encodeURIComponent).join('/');
+}
+
+async function loadCustomAssets() {
+  const allPaths = [];
+  Object.values(ASSET_FOLDERS).forEach(arr => arr.forEach(p => allPaths.push(p)));
+  await Promise.all(allPaths.filter(p => /\.svg$/i.test(p)).map(async (path) => {
+    try {
+      const r = await fetch(assetUrl(path));
+      const text = await r.text();
+      SVG_CACHE[path] = svgMarkupToCurrentColor(text);
+    } catch (e) {
+      SVG_CACHE[path] = null;
+    }
+  }));
+
+  const sectionIds = {
+    buildingblocks: 'assets-buildingblocks',
+    patternbg: 'assets-patternbg',
+    patternblocks: 'assets-patternblocks',
+    logos: 'assets-logos',
+    gradientbg: 'assets-gradientbg',
+    cyanicons: 'assets-cyanicons',
+  };
+  Object.keys(ASSET_FOLDERS).forEach(key => {
+    const grid = document.getElementById(sectionIds[key]);
+    if (!grid) return;
+    ASSET_FOLDERS[key].forEach((path) => {
+      const tile = document.createElement('div');
+      tile.className = 'img-tile';
+      tile.setAttribute('data-type', 'asset');
+      tile.setAttribute('data-src', path);
+      const img = document.createElement('img');
+      img.className = 'asset-preview';
+      img.src = assetUrl(path);
+      img.alt = '';
+      img.loading = 'lazy';
+      img.onerror = () => { img.style.background = 'var(--border)'; img.alt = '?'; };
+      tile.appendChild(img);
+      grid.appendChild(tile);
+      setupSidebarDrag(tile);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// PALETTE
+// ══════════════════════════════════════════════════════════════
+function buildPalette() {
+  function addSwatches(containerId, colorList, selectFirst) {
+    const grid = document.getElementById(containerId);
+    if (!grid) return;
+    colorList.forEach((c, i) => {
+      const sw = document.createElement('div');
+      sw.className = 'swatch' + (selectFirst && i === 0 ? ' selected' : '');
+      sw.style.background = c;
+      sw.setAttribute('data-color', c);
+      sw.addEventListener('click', () => {
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+        sw.classList.add('selected');
+        currentColor = c;
+        applyColorToSelected();
+      });
+      grid.appendChild(sw);
+    });
+  }
+  addSwatches('color-grid-primary', PRIMARY_COLORS, true);
+  addSwatches('color-grid-secondary', SECONDARY_COLORS, false);
+}
+
+function applyColorToSelected() {
+  if (!selectedId) return;
+  const entry = elements.find(e=>e.id===selectedId);
+  if (!entry) return;
+  if (entry.type === 'text') {
+    entry.el.querySelector('.text-content').style.color = currentColor;
+  } else if (entry.type === 'shape') {
+    entry.el.querySelector('svg').style.color = currentColor;
+    entry.el.querySelector('svg').querySelectorAll('[fill="currentColor"]').forEach(el=>el.setAttribute('fill',currentColor));
+    entry.el.querySelector('svg').querySelectorAll('[stroke="currentColor"]').forEach(el=>el.setAttribute('stroke',currentColor));
+  } else if (entry.type === 'asset' && entry.assetSvg) {
+    entry.el.style.color = currentColor;
+    const svg = entry.el.querySelector('.asset-svg-wrap svg');
+    if (svg) {
+      svg.querySelectorAll('[fill="currentColor"]').forEach(el=>el.setAttribute('fill',currentColor));
+      svg.querySelectorAll('[stroke="currentColor"]').forEach(el=>el.setAttribute('stroke',currentColor));
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// SIDEBAR DRAG → CANVAS DROP
+// ══════════════════════════════════════════════════════════════
+function setupSidebarDrag(tile) {
+  tile.addEventListener('mousedown', (e) => {
+    if (gameDone || !gameActive) return;
+    e.preventDefault();
+    const type = tile.getAttribute('data-type');
+    dragFromSidebar = { type, tile, startX: e.clientX, startY: e.clientY };
+
+    const ghost = tile.cloneNode(true);
+    ghost.id = 'drag-ghost';
+    ghost.style.cssText = `
+      position:fixed; opacity:0.7; pointer-events:none;
+      z-index:9999; width:120px; transform:scale(0.9);
+      left:${e.clientX-60}px; top:${e.clientY-40}px;
+    `;
+    document.body.appendChild(ghost);
+
+    function onMove(mv) {
+      ghost.style.left = (mv.clientX-60)+'px';
+      ghost.style.top  = (mv.clientY-40)+'px';
+    }
+    function onUp(mv) {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      ghost.remove();
+      dropOnCanvas(mv, type, tile);
+      dragFromSidebar = null;
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+function dropOnCanvas(e, type, tile) {
+  const canvas = document.getElementById('poster-canvas');
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
+
+  if (type === 'text') {
+    const variant = tile.getAttribute('data-variant');
+    createTextElement(x, y, variant);
+  } else if (type === 'asset') {
+    const src = tile.getAttribute('data-src');
+    createAssetElement(x, y, src);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// CREATE ELEMENTS
+// ══════════════════════════════════════════════════════════════
+function createTextElement(cx, cy, variant) {
+  const id = 'el-'+(++elCounter);
+  const el = document.createElement('div');
+  el.className = 'canvas-element canvas-text';
+  el.setAttribute('data-id', id);
+
+  let defaultText, fontSize, fontFamily;
+  if (variant === 'headline') {
+    defaultText = 'HEADLINE'; fontSize = 48; fontFamily = currentFont;
+  } else if (variant === 'body') {
+    defaultText = 'Your text here.'; fontSize = 16; fontFamily = 'Space Grotesk';
+  } else {
+    defaultText = 'LABEL'; fontSize = 11; fontFamily = 'DM Mono';
+  }
+
+  const inner = document.createElement('div');
+  inner.className = 'text-content';
+  inner.contentEditable = 'true';
+  inner.spellcheck = false;
+  inner.textContent = defaultText;
+  inner.style.fontFamily = `'${fontFamily}', sans-serif`;
+  inner.style.fontSize = fontSize+'px';
+  inner.style.color = currentColor || '#000';
+  inner.style.lineHeight = '1.1';
+  inner.style.minWidth = '60px';
+  inner.style.textAlign = 'left';
+
+  if (variant === 'headline') inner.style.letterSpacing = '0.02em';
+  if (variant === 'label') inner.style.letterSpacing = '0.12em';
+
+  el.appendChild(inner);
+
+  const w = variant==='headline' ? 280 : 200;
+  const h = variant==='headline' ? 60  : 80;
+  const x = Math.max(0, cx - w/2);
+  const y = Math.max(0, cy - h/2);
+
+  el.style.cssText = `left:${x}px;top:${y}px;width:${w}px;min-height:${h}px;z-index:${10+elCounter};`;
+
+  elements.push({ id, el, type:'text', x, y, w, h, rotation:0, zIndex:10+elCounter });
+
+  const canvas = document.getElementById('poster-canvas');
+  canvas.appendChild(el);
+  addHandles(el, id);
+  setupElementInteraction(el, id);
+  selectElement(id);
+
+  inner.addEventListener('focus', () => selectElement(id));
+  return id;
+}
+
+function createAssetElement(cx, cy, src) {
+  const id = 'el-'+(++elCounter);
+  const el = document.createElement('div');
+  el.className = 'canvas-element canvas-asset';
+  el.setAttribute('data-id', id);
+
+  const isSvg = /\.svg$/i.test(src);
+  const w = 120, h = 120;
+  const x = Math.max(0, cx - w/2);
+  const y = Math.max(0, cy - h/2);
+  el.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;z-index:${10+elCounter};`;
+
+  if (isSvg && SVG_CACHE[src]) {
+    el.style.color = currentColor;
+    const wrap = document.createElement('div');
+    wrap.className = 'asset-svg-wrap';
+    wrap.innerHTML = SVG_CACHE[src];
+    el.appendChild(wrap);
+    elements.push({ id, el, type:'asset', x, y, w, h, rotation:0, zIndex:10+elCounter, assetSvg: true });
+  } else {
+    const img = document.createElement('img');
+    img.src = assetUrl(src);
+    img.draggable = false;
+    el.appendChild(img);
+    elements.push({ id, el, type:'asset', x, y, w, h, rotation:0, zIndex:10+elCounter, assetSvg: false });
+  }
+
+  document.getElementById('poster-canvas').appendChild(el);
+  addHandles(el, id);
+  setupElementInteraction(el, id);
+  selectElement(id);
+  return id;
+}
+
+// ══════════════════════════════════════════════════════════════
+// HANDLES
+// ══════════════════════════════════════════════════════════════
+function addHandles(el, id) {
+  // Handles are drawn in #poster-handles-overlay when element is selected (so they stay visible outside clipped canvas)
+}
+
+function updateHandlesInOverlay() {
+  const overlay = document.getElementById('poster-handles-overlay');
+  if (!overlay) return;
+  overlay.innerHTML = '';
+  if (!selectedId) return;
+  const entry = elements.find(e => e.id === selectedId);
+  if (!entry) return;
+  const el = entry.el;
+  const L = el.offsetLeft, T = el.offsetTop, W = el.offsetWidth, H = el.offsetHeight;
+
+  const rot = document.createElement('div');
+  rot.className = 'rotate-handle';
+  rot.style.cssText = `left:${L + W/2 - 8}px;top:${T - 24}px;width:16px;height:16px;position:absolute;`;
+  rot.addEventListener('mousedown', e => startRotate(e, selectedId));
+  overlay.appendChild(rot);
+
+  const corners = [
+    { pos: 'se', left: L + W - 5, top: T + H - 5 },
+    { pos: 'sw', left: L - 15, top: T + H - 5 },
+    { pos: 'ne', left: L + W - 5, top: T - 15 },
+    { pos: 'nw', left: L - 15, top: T - 15 },
+  ];
+  corners.forEach(({ pos, left, top }) => {
+    const h = document.createElement('div');
+    h.className = `resize-handle ${pos}`;
+    h.setAttribute('data-corner', pos);
+    h.style.cssText = `left:${left}px;top:${top}px;width:10px;height:10px;position:absolute;box-sizing:border-box;bottom:auto;right:auto;`;
+    h.addEventListener('mousedown', e => startResize(e, selectedId, pos));
+    overlay.appendChild(h);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// DRAG ELEMENTS ON CANVAS
+// ══════════════════════════════════════════════════════════════
+function setupElementInteraction(el, id) {
+  el.addEventListener('mousedown', e => {
+    if (gameDone) return;
+    if (e.target.classList.contains('resize-handle') || e.target.classList.contains('rotate-handle')) return;
+    e.preventDefault();
+    selectElement(id);
+    const isTextContent = e.target.classList.contains('text-content');
+    if (isTextContent) {
+      const startX = e.clientX, startY = e.clientY;
+      let dragged = false;
+      function onMove(mv) {
+        if (dragged) return;
+        if (Math.abs(mv.clientX - startX) > 5 || Math.abs(mv.clientY - startY) > 5) {
+          dragged = true;
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          startDrag(mv, id);
+        }
+      }
+      function onUp(mu) {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        if (!dragged) {
+          const tc = el.querySelector('.text-content');
+          if (tc) { tc.focus(); }
+        }
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    } else {
+      startDrag(e, id);
+    }
+  });
+}
+
+function startDrag(e, id) {
+  const entry = elements.find(el=>el.id===id);
+  if (!entry) return;
+  const startX = e.clientX, startY = e.clientY;
+  const startElX = entry.x, startElY = entry.y;
+
+  function onMove(mv) {
+    const dx = mv.clientX - startX;
+    const dy = mv.clientY - startY;
+    const canvas = document.getElementById('poster-canvas');
+    let nx = startElX + dx;
+    let ny = startElY + dy;
+    // Slight imprecision — intentional 1px drift
+    if (Math.random() > 0.97) { nx += (Math.random()-0.5)*2; ny += (Math.random()-0.5)*2; }
+    entry.x = nx; entry.y = ny;
+    entry.el.style.left = nx+'px';
+    entry.el.style.top  = ny+'px';
+    // Subtle snap hints
+    const snapX = snapTo(nx, [0, canvas.offsetWidth/2, canvas.offsetWidth]);
+    const snapY = snapTo(ny, [0, canvas.offsetHeight/2, canvas.offsetHeight]);
+    if (snapX !== null) entry.el.style.left = snapX+'px';
+    if (snapY !== null) entry.el.style.top  = snapY+'px';
+    updateHandlesInOverlay();
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    updatePropsPanel();
+    updateHandlesInOverlay();
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function snapTo(val, targets, threshold=8) {
+  for (const t of targets) {
+    if (Math.abs(val - t) < threshold) return t;
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════════
+// RESIZE
+// ══════════════════════════════════════════════════════════════
+function startResize(e, id, corner) {
+  e.preventDefault(); e.stopPropagation();
+  const entry = elements.find(el=>el.id===id);
+  if (!entry) return;
+  const startX = e.clientX, startY = e.clientY;
+  const startW = entry.el.offsetWidth, startH = entry.el.offsetHeight;
+  const startElX = entry.x, startElY = entry.y;
+
+  function onMove(mv) {
+    const dx = mv.clientX - startX;
+    const dy = mv.clientY - startY;
+    let nw = startW, nh = startH, nx = startElX, ny = startElY;
+
+    if (corner === 'se') { nw = Math.max(30, startW+dx); nh = Math.max(20, startH+dy); }
+    if (corner === 'sw') { nw = Math.max(30, startW-dx); nx = startElX+startW-nw; nh = Math.max(20, startH+dy); }
+    if (corner === 'ne') { nw = Math.max(30, startW+dx); nh = Math.max(20, startH-dy); ny = startElY+startH-nh; }
+    if (corner === 'nw') { nw = Math.max(30, startW-dx); nx = startElX+startW-nw; nh = Math.max(20, startH-dy); ny = startElY+startH-nh; }
+
+    entry.w = nw; entry.h = nh; entry.x = nx; entry.y = ny;
+    entry.el.style.width  = nw+'px';
+    entry.el.style.height = nh+'px';
+    entry.el.style.left   = nx+'px';
+    entry.el.style.top    = ny+'px';
+    updatePropsPanel();
+    updateHandlesInOverlay();
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    updateHandlesInOverlay();
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+// ══════════════════════════════════════════════════════════════
+// ROTATE
+// ══════════════════════════════════════════════════════════════
+function startRotate(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  const entry = elements.find(el=>el.id===id);
+  if (!entry) return;
+  const rect = entry.el.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top  + rect.height/2;
+
+  function onMove(mv) {
+    const angle = Math.atan2(mv.clientY-cy, mv.clientX-cx) * (180/Math.PI) + 90;
+    entry.rotation = angle;
+    entry.el.style.transform = `rotate(${angle}deg)`;
+    updateHandlesInOverlay();
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    updateHandlesInOverlay();
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SELECT & DESELECT
+// ══════════════════════════════════════════════════════════════
+function selectElement(id) {
+  elements.forEach(e => e.el.classList.remove('selected'));
+  selectedId = id;
+  const entry = elements.find(e=>e.id===id);
+  if (entry) {
+    entry.el.classList.add('selected');
+    showPropsPanel(entry);
+    updateHandlesInOverlay();
+  }
+}
+
+function deselectAll() {
+  elements.forEach(e => e.el.classList.remove('selected'));
+  selectedId = null;
+  document.getElementById('props-section').style.display = 'none';
+  const overlay = document.getElementById('poster-handles-overlay');
+  if (overlay) overlay.innerHTML = '';
+}
+
+document.getElementById('poster-canvas').addEventListener('mousedown', e => {
+  if (e.target === document.getElementById('poster-canvas')) deselectAll();
+});
+
+// ══════════════════════════════════════════════════════════════
+// PROPERTIES PANEL
+// ══════════════════════════════════════════════════════════════
+function showPropsPanel(entry) {
+  const sec = document.getElementById('props-section');
+  sec.style.display = 'block';
+  updatePropsPanel();
+
+  if (entry.type === 'text') {
+    document.getElementById('prop-fontsize').style.display = '';
+    document.getElementById('prop-fontsize-val').style.display = '';
+  }
+}
+
+function updatePropsPanel() {
+  if (!selectedId) return;
+  const entry = elements.find(e=>e.id===selectedId);
+  if (!entry) return;
+  document.getElementById('prop-w').value = Math.round(entry.el.offsetWidth);
+  document.getElementById('prop-h').value = Math.round(entry.el.offsetHeight);
+
+  if (entry.type === 'text') {
+    const tc = entry.el.querySelector('.text-content');
+    if (tc) {
+      const fs = parseInt(tc.style.fontSize)||24;
+      document.getElementById('prop-fontsize').value = fs;
+      document.getElementById('prop-fontsize-val').textContent = fs;
+    }
+  }
+}
+
+document.getElementById('prop-w').addEventListener('input', function() {
+  if (!selectedId) return;
+  const entry = elements.find(e=>e.id===selectedId);
+  if (entry) { entry.el.style.width = this.value+'px'; entry.w = +this.value; }
+});
+document.getElementById('prop-h').addEventListener('input', function() {
+  if (!selectedId) return;
+  const entry = elements.find(e=>e.id===selectedId);
+  if (entry) { entry.el.style.height = this.value+'px'; entry.h = +this.value; }
+});
+
+document.getElementById('prop-fontsize').addEventListener('input', function() {
+  if (!selectedId) return;
+  const entry = elements.find(e=>e.id===selectedId);
+  document.getElementById('prop-fontsize-val').textContent = this.value;
+  if (entry && entry.type==='text') {
+    const tc = entry.el.querySelector('.text-content');
+    if (tc) tc.style.fontSize = this.value+'px';
+  }
+});
+
+// Alignment
+['el-align-left','el-align-center','el-align-right'].forEach((bid,i) => {
+  document.getElementById(bid).addEventListener('click', () => {
+    if (!selectedId) return;
+    const entry = elements.find(e=>e.id===selectedId);
+    if (entry && entry.type==='text') {
+      const tc = entry.el.querySelector('.text-content');
+      if (tc) tc.style.textAlign = ['left','center','right'][i];
+    }
+  });
+});
+
+// Layer
+document.getElementById('layer-forward').addEventListener('click', () => {
+  if (!selectedId) return;
+  const entry = elements.find(e=>e.id===selectedId);
+  if (entry) { entry.zIndex++; entry.el.style.zIndex = entry.zIndex; }
+});
+document.getElementById('layer-backward').addEventListener('click', () => {
+  if (!selectedId) return;
+  const entry = elements.find(e=>e.id===selectedId);
+  if (entry && entry.zIndex>1) { entry.zIndex--; entry.el.style.zIndex = entry.zIndex; }
+});
+
+// Delete
+document.getElementById('delete-el').addEventListener('click', () => {
+  if (!selectedId) return;
+  const idx = elements.findIndex(e=>e.id===selectedId);
+  if (idx>=0) {
+    elements[idx].el.remove();
+    elements.splice(idx,1);
+    deselectAll();
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// TOP BAR CONTROLS
+// ══════════════════════════════════════════════════════════════
+document.getElementById('font-select').addEventListener('change', function() {
+  currentFont = this.value;
+  if (!selectedId) return;
+  const entry = elements.find(e=>e.id===selectedId);
+  if (entry && entry.type==='text') {
+    const tc = entry.el.querySelector('.text-content');
+    if (tc) tc.style.fontFamily = `'${currentFont}', sans-serif`;
+  }
+});
+
+['btn-align-left','btn-align-center','btn-align-right'].forEach((bid,i) => {
+  document.getElementById(bid).addEventListener('click', () => {
+    if (!selectedId) return;
+    const entry = elements.find(e=>e.id===selectedId);
+    if (entry && entry.type==='text') {
+      const tc = entry.el.querySelector('.text-content');
+      if (tc) tc.style.textAlign = ['left','center','right'][i];
+    }
+  });
+});
+
+// Sidebar text drags
+document.querySelectorAll('#sidebar [data-type="text"]').forEach(setupSidebarDrag);
+
+// ══════════════════════════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════════════════════════
+function startTimer() {
+  secondsLeft = 60;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    updateTimerDisplay();
+    if (secondsLeft <= 0) {
+      clearInterval(timerInterval);
+      endGame();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const td = document.getElementById('timer-display');
+  const bar = document.getElementById('timer-bar');
+  const m = Math.floor(secondsLeft/60);
+  const s = secondsLeft%60;
+  td.textContent = m+':'+(s<10?'0':'')+s;
+
+  const pct = (secondsLeft/60)*100;
+  bar.style.width = pct+'%';
+
+  // Color escalation
+  td.classList.remove('warn','danger','pulse');
+  bar.style.background = '#e8e8e8';
+
+  if (secondsLeft <= 10) {
+    td.classList.add('danger','pulse');
+    bar.style.background = '#ff4444';
+  } else if (secondsLeft <= 30) {
+    td.classList.add('warn');
+    bar.style.background = '#ffaa00';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// GAME FLOW
+// ══════════════════════════════════════════════════════════════
+function startGame() {
+  gameActive = true;
+  gameDone = false;
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('onboarding-screen').classList.add('hidden');
+  document.getElementById('poster-canvas').classList.remove('frozen');
+  document.getElementById('end-overlay').classList.remove('visible');
+  startTimer();
+}
+
+function endGame() {
+  gameDone = true;
+  gameActive = false;
+  deselectAll();
+
+  // Remove all handles visually
+  document.querySelectorAll('.resize-handle, .rotate-handle').forEach(h => {
+    h.style.display = 'none';
+  });
+
+  // Freeze canvas
+  document.getElementById('poster-canvas').classList.add('frozen');
+
+  // Make all text non-editable
+  document.querySelectorAll('.text-content').forEach(tc => {
+    tc.contentEditable = 'false';
+  });
+
+  // Show end overlay with delay for drama (optionally use player name)
+  setTimeout(() => {
+    const line1 = document.getElementById('end-line-1');
+    line1.textContent = playerName.trim()
+      ? `This took one minute, ${playerName.trim()}.`
+      : 'This took one minute.';
+    document.getElementById('end-overlay').classList.add('visible');
+  }, 400);
+}
+
+function resetGame() {
+  // Clear canvas
+  const canvas = document.getElementById('poster-canvas');
+  canvas.innerHTML = '';
+  elements = [];
+  elCounter = 0;
+  selectedId = null;
+  gameDone = false;
+  gameActive = false;
+
+  // Reset UI
+  document.getElementById('end-overlay').classList.remove('visible');
+  document.getElementById('props-section').style.display = 'none';
+
+  // Reset timer display
+  const td = document.getElementById('timer-display');
+  td.textContent = '1:00';
+  td.className = '';
+  document.getElementById('timer-bar').style.width = '100%';
+  document.getElementById('timer-bar').style.background = '#e8e8e8';
+
+  // Show start screen, hide onboarding
+  document.getElementById('start-screen').classList.remove('hidden');
+  document.getElementById('onboarding-screen').classList.add('hidden');
+}
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('onboarding-screen').classList.remove('hidden');
+});
+
+document.getElementById('start-timer-btn').addEventListener('click', () => {
+  playerName = (document.getElementById('player-name').value || '').trim();
+  startGame();
+});
+
+function getPosterFilename() {
+  const base = (playerName && playerName.trim()) ? playerName.trim().replace(/[^a-zA-Z0-9_-]/g, '_') : 'one-minute-poster';
+  return base + '.png';
+}
+
+function capturePoster() {
+  const poster = document.getElementById('poster-canvas');
+  if (typeof html2canvas !== 'function') return Promise.reject(new Error('html2canvas not loaded'));
+  return html2canvas(poster, { scale: 2, useCORS: true, logging: false })
+    .then(canvas => ({ dataUrl: canvas.toDataURL('image/png'), filename: getPosterFilename() }));
+}
+
+function doDownload(dataUrl, filename) {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;
+  a.click();
+}
+
+// Miro allows max 6MB image; proxy request body must stay under Vercel limit (~4.5MB). Resize/compress if needed.
+function ensureImageUnderLimitForMiro(dataUrl, maxDecodedBytes) {
+  if (maxDecodedBytes == null) maxDecodedBytes = 5.5e6;
+  if (maxDecodedBytes > 5.5e6) maxDecodedBytes = 5.5e6;
+  const approxDecoded = (dataUrl.length - (dataUrl.indexOf(',') + 1)) * 3 / 4;
+  if (approxDecoded <= maxDecodedBytes) return Promise.resolve(dataUrl);
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const scale = Math.min(1, Math.sqrt(maxDecodedBytes / (w * h * 2))); // rough: 2 bytes per pixel
+      const c = document.createElement('canvas');
+      c.width = Math.round(w * scale);
+      c.height = Math.round(h * scale);
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      let out = c.toDataURL('image/jpeg', 0.88);
+      for (let i = 0; i < 8 && out.length * 3 / 4 > maxDecodedBytes; i++) {
+        c.width = Math.max(200, Math.round(c.width * 0.8));
+        c.height = Math.max(200, Math.round(c.height * 0.8));
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        out = c.toDataURL('image/jpeg', 0.82);
+      }
+      resolve(out);
+    };
+    img.onerror = () => reject(new Error('Could not process image for upload'));
+    img.src = dataUrl;
+  });
+}
+
+function dataUrlToBlob(dataUrl) {
+  const comma = dataUrl.indexOf(',');
+  const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+  const mimeMatch = dataUrl.match(/^data:([^;,]+)/);
+  const mime = (mimeMatch && mimeMatch[1]) || 'image/png';
+  const bin = atob(base64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+function doMiro(dataUrl, filename) {
+  const boardId = (UPLOAD_CONFIG.miroBoardId || '').trim();
+  const token = (UPLOAD_CONFIG.miroAccessToken || '').trim();
+  if (!boardId || !token) {
+    alert('Miro is not configured. See MIRO_SETUP.md for steps, then set miroBoardId and miroAccessToken in index.html.');
+    return Promise.reject();
+  }
+  // Use 3MB max when sending to proxy so request body stays under Vercel's 4.5MB limit
+  const maxBytes = 3e6;
+  return ensureImageUnderLimitForMiro(dataUrl, maxBytes).then(processedDataUrl => {
+    return fetch('/api/miro-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ boardId, accessToken: token, imageDataUrl: processedDataUrl })
+    });
+  }).then(res => {
+    if (res.ok) {
+      alert('Uploaded as "' + filename + '"');
+      return;
+    }
+    return res.text().then(function(text) {
+      let msg = res.status + '';
+      try {
+        const err = JSON.parse(text);
+        if (err && err.message) msg = err.message;
+        else if (err && err.error) msg = err.error;
+      } catch (_) {}
+      if (text && msg === res.status + '') msg = text.slice(0, 200);
+      throw new Error('Miro upload failed: ' + msg);
+    });
+  });
+}
+
+function runAfterCapture(action) {
+  const endOverlay = document.getElementById('end-overlay');
+  if (!endOverlay || !endOverlay.classList.contains('visible')) {
+    resetGame();
+    return;
+  }
+  capturePoster()
+    .then(({ dataUrl, filename }) => {
+      if (action === 'download') doDownload(dataUrl, filename);
+      else if (action === 'miro') return doMiro(dataUrl, filename);
+    })
+    .catch(err => { if (err && err.message) alert(err.message); })
+    .finally(() => resetGame());
+}
+
+document.getElementById('submit-download').addEventListener('click', () => runAfterCapture('download'));
+document.getElementById('submit-miro').addEventListener('click', () => runAfterCapture('miro'));
+
+// ══════════════════════════════════════════════════════════════
+// KEYBOARD shortcuts
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (gameDone || !gameActive) return;
+  if (e.key === 'Escape') deselectAll();
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    // Only delete if not typing in text
+    const active = document.activeElement;
+    if (active && active.classList.contains('text-content')) return;
+    if (selectedId) {
+      const idx = elements.findIndex(el=>el.id===selectedId);
+      if (idx>=0) {
+        elements[idx].el.remove();
+        elements.splice(idx,1);
+        deselectAll();
+      }
+    }
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+buildPalette();
+loadCustomAssets();
+</script>
+</body>
+</html>
