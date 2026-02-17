@@ -7,6 +7,8 @@
  * Or set env vars MIRO_BOARD_ID and MIRO_ACCESS_TOKEN and send only: { imageDataUrl }
  */
 
+import FormData from 'form-data';
+
 const MIRO_BOARD_ID = process.env.MIRO_BOARD_ID || '';
 const MIRO_ACCESS_TOKEN = process.env.MIRO_ACCESS_TOKEN || '';
 
@@ -62,23 +64,19 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Image too large (max 6 MB for Miro)' });
   }
 
-  const dataPart = new Blob(
-    [JSON.stringify({ position: { x: 0, y: 0, origin: 'center' } })],
-    { type: 'application/json' }
-  );
-  const imageBlob = new Blob([imageBuffer], { type: mime });
   const ext = mime === 'image/jpeg' ? 'jpg' : 'png';
-
   const form = new FormData();
-  form.append('data', dataPart, 'data.json');
-  form.append('resource', imageBlob, `poster.${ext}`);
+  // Miro expects "data" as a form field with Content-Type application/json, not as a file
+  form.append('data', JSON.stringify({ position: { x: 0, y: 0 } }), { contentType: 'application/json' });
+  form.append('resource', imageBuffer, { filename: `poster.${ext}`, contentType: mime });
 
   const miroUrl = `https://api.miro.com/v2/boards/${encodeURIComponent(boardId)}/images`;
+  const headers = { ...form.getHeaders(), 'Authorization': `Bearer ${accessToken}` };
   let miroRes;
   try {
     miroRes = await fetch(miroUrl, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${accessToken}` },
+      headers,
       body: form,
     });
   } catch (err) {
