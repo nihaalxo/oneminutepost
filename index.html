@@ -1632,6 +1632,8 @@ function doMiro(dataUrl, filename) {
   // Use 3MB max when sending to proxy so request body stays under Vercel's 4.5MB limit
   const maxBytes = 3e6;
   return ensureImageUnderLimitForMiro(dataUrl, maxBytes).then(processedDataUrl => {
+    console.log('Sending imageDataUrl length:', processedDataUrl?.length);
+    console.log('First 50 chars:', processedDataUrl?.substring(0, 50));
     return fetch('/api/miro-upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

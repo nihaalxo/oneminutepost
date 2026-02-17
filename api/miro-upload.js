@@ -44,6 +44,8 @@ async function getBodyIfNeeded(req) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
+  console.log('req.body type:', typeof req.body);
+
   if (typeof req.body === 'string') {
     try {
       req.body = JSON.parse(req.body);
@@ -56,6 +58,11 @@ export default async function handler(req, res) {
   const { boardId, accessToken, imageDataUrl } = body ?? {};
   const token = (accessToken || MIRO_ACCESS_TOKEN || '').trim();
   const board = (boardId || MIRO_BOARD_ID || '').trim();
+
+  console.log('imageDataUrl present:', !!imageDataUrl);
+  console.log('imageDataUrl length:', imageDataUrl?.length);
+  console.log('board:', board);
+  console.log('token present:', !!token);
 
   if (!token || !board || !imageDataUrl) {
     return res.status(400).json({
@@ -70,6 +77,8 @@ export default async function handler(req, res) {
     const mime = (mimeMatch && mimeMatch[1]) || 'image/png';
     const ext = mime === 'image/jpeg' ? 'jpg' : 'png';
     const imageBuffer = Buffer.from(base64, 'base64');
+
+    console.log('imageBuffer size:', imageBuffer.byteLength);
 
     if (imageBuffer.byteLength === 0) {
       return res.status(400).json({ error: 'Image buffer is empty after decode' });
@@ -90,6 +99,10 @@ export default async function handler(req, res) {
       contentType: mime,
       knownLength: imageBuffer.byteLength,
     });
+
+    const formLength = await new Promise((resolve, reject) => form.getLength((err, len) => (err ? reject(err) : resolve(len))));
+    console.log('form headers:', form.getHeaders());
+    console.log('form length:', formLength);
 
     const miroUrl = `https://api.miro.com/v2/boards/${encodeURIComponent(board)}/images`;
 
